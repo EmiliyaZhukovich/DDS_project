@@ -1,0 +1,106 @@
+{% load static %}
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ДДС — Форма</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<div class="container py-4">
+  <a href="{% url 'movement_list' %}" class="btn btn-link">← К списку</a>
+  <h1 class="h4 mb-3">Операция ДДС</h1>
+  <form method="post" class="row g-3" novalidate>
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+    <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+    {% endif %}
+
+    <div class="col-md-3">
+      <label class="form-label">Дата</label>
+      {{ form.created_at }}
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Статус*</label>
+      {{ form.status }}
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Тип*</label>
+      {{ form.movement_type }}
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Категория*</label>
+      {{ form.category }}
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Подкатегория*</label>
+      {{ form.subcategory }}
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Сумма*</label>
+      {{ form.amount }}
+    </div>
+    <div class="col-12">
+      <label class="form-label">Комментарий</label>
+      {{ form.comment }}
+    </div>
+    <div class="col-12 d-flex gap-2">
+      <button class="btn btn-primary">Сохранить</button>
+      <a class="btn btn-outline-secondary" href="{% url 'movement_list' %}">Отмена</a>
+    </div>
+  </form>
+</div>
+
+<script>
+document.querySelectorAll('select').forEach(el => el.classList.add('form-select'));
+document.querySelectorAll('input[type="text"], input[type="number"], input[type="date"], textarea').forEach(el => el.classList.add('form-control'));
+
+const movementTypeSelect = document.getElementById('id_movement_type');
+const categorySelect = document.getElementById('id_category');
+const subcategorySelect = document.getElementById('id_subcategory');
+
+function clearOptions(select, placeholder) {
+  select.innerHTML = '';
+  const opt = document.createElement('option');
+  opt.value = '';
+  opt.textContent = placeholder;
+  select.appendChild(opt);
+}
+
+movementTypeSelect && movementTypeSelect.addEventListener('change', async (e) => {
+  const mt = e.target.value;
+  clearOptions(categorySelect, '— выберите категорию —');
+  clearOptions(subcategorySelect, '— выберите подкатегорию —');
+  if (!mt) return;
+  try {
+    const res = await fetch(`/api/categories/?movement_type=${mt}`);
+    const data = await res.json();
+    data.result.forEach(({id, name}) => {
+      const o = document.createElement('option');
+      o.value = id; o.textContent = name; categorySelect.appendChild(o);
+    });
+  } catch (error) {
+    console.error('Error fetching categories:', error);
+  }
+});
+
+categorySelect && categorySelect.addEventListener('change', async (e) => {
+  const cat = e.target.value;
+  clearOptions(subcategorySelect, '— выберите подкатегорию —');
+  if (!cat) return;
+  try {
+    const res = await fetch(`/api/subcategories/?category=${cat}`);
+    const data = await res.json();
+    data.result.forEach(({id, name}) => {
+      const o = document.createElement('option');
+      o.value = id; o.textContent = name; subcategorySelect.appendChild(o);
+    });
+  } catch (error) {
+    console.error('Error fetching subcategories:', error);
+  }
+});
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
