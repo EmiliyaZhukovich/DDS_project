@@ -37,7 +37,7 @@ class Category(models.Model):
         verbose_name_plural = 'Категории'
 
     def __str__(self) -> str:
-        f"{self.name} ({self.movement_type})"
+        return f"{self.name} ({self.movement_type})"
 
 class SubCategory(models.Model):
     name = models.CharField(max_length=128)
@@ -53,7 +53,7 @@ class SubCategory(models.Model):
         verbose_name_plural = 'Подкатегории'
 
     def __str__(self) -> str:
-        f"{self.name} ({self.category})"
+        return f"{self.name} ({self.category})"
 
 class Movement(models.Model):
     created_at = models.DateField(default=timezone.now)
