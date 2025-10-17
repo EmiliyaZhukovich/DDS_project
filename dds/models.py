@@ -57,7 +57,7 @@ class SubCategory(models.Model):
 
 class Movement(models.Model):
     created_at = models.DateField(default=timezone.now)
-    status = models.ForeignKey(Status, on_delete=models.PROTECT, related_name='movements')
+    status = models.ForeignKey(Status, on_delete=models.PROTECT, related_name='movements', null=True, blank=True)
     movement_type = models.ForeignKey(MovementType, on_delete=models.PROTECT, related_name='movements')
     category = models.ForeignKey(Category, on_delete=models.PROTECT, related_name='movements')
     subcategory = models.ForeignKey(SubCategory, on_delete=models.PROTECT, related_name='movements')
@@ -73,6 +73,16 @@ class Movement(models.Model):
         return f"{self.created_at} {self.movement_type} {self.category}/{self.subcategory}: {self.amount}"
 
     def clean(self) -> None:
+        errors = {}
+        # Check mandatory fields
+        if not self.movement_type:
+            errors['movement_type'] = "Это поле обязательно."
+        if not self.category:
+            errors['category'] = "Это поле обязательно."
+        if not self.subcategory:
+            errors['subcategory'] = "Это поле обязательно."
+        if not self.amount:
+            errors['amount'] = "Это поле обязательно."
         # Validate category belongs to movement_type
         if self.category and self.movement_type and self.category.movement_type_id != self.movement_type_id:
             raise ValidationError({
@@ -85,6 +95,8 @@ class Movement(models.Model):
                 "subcategory": "Подкатегория должна относиться к выбранной категории.",
                 "category": "Категория должна соответствовать подкатегории.",
             })
+        if errors:
+            raise ValidationError(errors)
 
     def save(self, *args, **kwargs):
         self.full_clean()
