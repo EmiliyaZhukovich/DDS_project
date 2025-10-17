@@ -15,6 +15,27 @@ class MovementForm(forms.ModelForm):
         widget=forms.DateInput(attrs={'type':'date'}),
         initial=timezone.now
     )
+    status = forms.ModelChoiceField(
+        queryset=Status.objects.all(),
+        required=False,
+    )
+    movement_type = forms.ModelChoiceField(
+        queryset=MovementType.objects.all(),
+        required=True,
+    )
+    category = forms.ModelChoiceField(
+        queryset=Category.objects.none(),
+        required=True,
+    )
+    subcategory = forms.ModelChoiceField(
+        queryset=SubCategory.objects.none(),
+        required=True,
+    )
+    amount = forms.DecimalField(
+        required=True,
+        min_value=0.01,
+        widget=forms.NumberInput(attrs={'step': '0.01'})
+    )
 
     class Meta:
         model = Movement
@@ -115,10 +136,17 @@ class MovementCreateView(View):
 
     def post(self, request):
         form = MovementForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect(reverse('movement_list'))
-        return render(request, 'dds/movement_form.html', {'form':form})
+        try:
+            if form.is_valid():
+                form.save()
+                return redirect(reverse('movement_list'))
+            else:
+                pass
+        except forms.ValidationError as e:
+            form.add_error(None, str(e))
+        except Exception as e:
+            form.add_error(None, f"Ошибка при сохранении: {str(e)}")
+        return render(request, 'dds/movement_form.html', {'form': form})
 
 class MovementUpdateView(View):
     def get(self, request, pk):
