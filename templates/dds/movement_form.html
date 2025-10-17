@@ -11,42 +11,63 @@
 <div class="container py-4">
   <a href="{% url 'movement_list' %}" class="btn btn-link">← К списку</a>
   <h1 class="h4 mb-3">Операция ДДС</h1>
-  <form method="post" class="row g-3" novalidate>
+  <form method="post" class="row g-3">
     {% csrf_token %}
     {% if form.non_field_errors %}
-    <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+      <div class="alert alert-danger">{{ form.non_field_errors }}</div>
     {% endif %}
 
     <div class="col-md-3">
       <label class="form-label">Дата</label>
       {{ form.created_at }}
+      {% if form.created_at.errors %}
+        <div class="text-danger">{{ form.created_at.errors }}</div>
+      {% endif %}
     </div>
     <div class="col-md-3">
-      <label class="form-label">Статус*</label>
+      <label class="form-label">Статус</label>
       {{ form.status }}
+      {% if form.status.errors %}
+        <div class="text-danger">{{ form.status.errors }}</div>
+      {% endif %}
     </div>
     <div class="col-md-3">
       <label class="form-label">Тип*</label>
       {{ form.movement_type }}
+      {% if form.movement_type.errors %}
+        <div class="text-danger">{{ form.movement_type.errors }}</div>
+      {% endif %}
     </div>
     <div class="col-md-3">
       <label class="form-label">Категория*</label>
       {{ form.category }}
+      {% if form.category.errors %}
+        <div class="text-danger">{{ form.category.errors }}</div>
+      {% endif %}
     </div>
     <div class="col-md-3">
       <label class="form-label">Подкатегория*</label>
       {{ form.subcategory }}
+      {% if form.subcategory.errors %}
+        <div class="text-danger">{{ form.subcategory.errors }}</div>
+      {% endif %}
     </div>
     <div class="col-md-3">
       <label class="form-label">Сумма*</label>
       {{ form.amount }}
+      {% if form.amount.errors %}
+        <div class="text-danger">{{ form.amount.errors }}</div>
+      {% endif %}
     </div>
     <div class="col-12">
       <label class="form-label">Комментарий</label>
       {{ form.comment }}
+      {% if form.comment.errors %}
+        <div class="text-danger">{{ form.comment.errors }}</div>
+      {% endif %}
     </div>
     <div class="col-12 d-flex gap-2">
-      <button class="btn btn-primary">Сохранить</button>
+      <button class="btn btn-primary" type="submit">Сохранить</button>
       <a class="btn btn-outline-secondary" href="{% url 'movement_list' %}">Отмена</a>
     </div>
   </form>
@@ -59,6 +80,46 @@ document.querySelectorAll('input[type="text"], input[type="number"], input[type=
 const movementTypeSelect = document.getElementById('id_movement_type');
 const categorySelect = document.getElementById('id_category');
 const subcategorySelect = document.getElementById('id_subcategory');
+const amountInput = document.getElementById('id_amount');
+const form = document.querySelector('form');
+
+// Client-side validation
+form.addEventListener('submit', (e) => {
+  let errors = [];
+  if (!movementTypeSelect.value) {
+    errors.push('Пожалуйста, выберите тип операции.');
+    movementTypeSelect.classList.add('is-invalid');
+  } else {
+    movementTypeSelect.classList.remove('is-invalid');
+  }
+  if (!categorySelect.value) {
+    errors.push('Пожалуйста, выберите категорию.');
+    categorySelect.classList.add('is-invalid');
+  } else {
+    categorySelect.classList.remove('is-invalid');
+  }
+  if (!subcategorySelect.value) {
+    errors.push('Пожалуйста, выберите подкатегорию.');
+    subcategorySelect.classList.add('is-invalid');
+  } else {
+    subcategorySelect.classList.remove('is-invalid');
+  }
+  if (!amountInput.value || amountInput.value <= 0) {
+    errors.push('Пожалуйста, введите сумму больше 0.');
+    amountInput.classList.add('is-invalid');
+  } else {
+    amountInput.classList.remove('is-invalid');
+  }
+
+  if (errors.length > 0) {
+    e.preventDefault();
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'alert alert-danger';
+    errorDiv.innerHTML = errors.join('<br>');
+    form.prepend(errorDiv);
+    setTimeout(() => errorDiv.remove(), 5000); // Remove after 5 seconds
+  }
+});
 
 function clearOptions(select, placeholder) {
   select.innerHTML = '';
@@ -72,9 +133,11 @@ movementTypeSelect && movementTypeSelect.addEventListener('change', async (e) =>
   const mt = e.target.value;
   clearOptions(categorySelect, '— выберите категорию —');
   clearOptions(subcategorySelect, '— выберите подкатегорию —');
+  categorySelect.classList.remove('is-invalid');
+  subcategorySelect.classList.remove('is-invalid');
   if (!mt) return;
   try {
-    const res = await fetch(`/api/categories/?movement_type=${mt}`);
+    const res = await fetch("{% url 'api_categories_by_type' %}?movement_type=" + mt);
     const data = await res.json();
     data.result.forEach(({id, name}) => {
       const o = document.createElement('option');
@@ -88,9 +151,10 @@ movementTypeSelect && movementTypeSelect.addEventListener('change', async (e) =>
 categorySelect && categorySelect.addEventListener('change', async (e) => {
   const cat = e.target.value;
   clearOptions(subcategorySelect, '— выберите подкатегорию —');
+  subcategorySelect.classList.remove('is-invalid');
   if (!cat) return;
   try {
-    const res = await fetch(`/api/subcategories/?category=${cat}`);
+    const res = await fetch("{% url 'api_subcategories_by_category' %}?category=" + cat);
     const data = await res.json();
     data.result.forEach(({id, name}) => {
       const o = document.createElement('option');
